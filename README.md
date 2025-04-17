@@ -1,41 +1,86 @@
-## プレイヤーを動かす
-プレイヤーは左右に移動して石を避けることができるようにしたい
-キーボードの→を押せば右へ移動
-キーボードの←を押せば左へ移動
+## 複数の石を落とす
+Stoneクラスから作られたオブジェクトを落ちてくる一つ一つの石として扱う
 
-pyxel.blt関数の表示させる座標を指定する引数を変更する
-　➡️ プレイヤーのpyxel.bltの第１引数に指定するx座標だけ変更
-
-<img src="screenshot-2025-04-17-123147.png" width=400, height=250>
-<img src="screenshot-2025-04-17-124328.png" width=400, height=250>
-
+<img src="screenshot-2025-04-17-142329.png" width=400, height=250>
 
 ```python
-プレイヤーの移動
-if pyxel.btn(pyxel.KEY_RIGHT) and self.player_x < SCREEN_WIDTH - 12:
-  self.player_x += 1
-elif pyxel.btn(pyxel.KEY_LEFT) and self.player_x > -4:
-  self.player_x -= 1
-```
+SCREEN_WIDTH = 160
+SCREEN_HEIGHT = 120
+STONE_INTERVAL = 30
 
-## 石を落とす
-```python
-石の落下
-if self.stone_y < SCREEN_HEIGHT:
-  self.stone_y += 1
-```
+石の座標を表すx,yインスタンス変数
+class Stone:
+  def __init__(self, x, y):
+    self.x = x
+    self.y = y
+石の移動
+  def update(self):
+    if self.y < SCREEN_HEIGHT:
+      self.y += 1
+石の表示 
+  def draw(self):
+    pyxel.blt(self.x,self.y,0,8,0,8,8, pyxel.COLOR_BLACK)
 
-石とプレイヤーが当たったかどうかはお互いの座標位置関係で判別
-<img src="screenshot-2025-04-17-134640.png " width=400, height=250>
+class App:
+  def __init__(self):
+    pyxel.init(SCREEN_WIDTH,SCREEN_HEIGHT,title='サプーゲーム')
+    pyxel.mouse(True)
+    pyxel.load("my_resource.pyxres")
+    self.player_x = SCREEN_WIDTH // 2
+    self.player_y = SCREEN_HEIGHT * 4 // 5
 
-```python
+Stoneクラスに持たせた石のx座標とy座標削除
+stoneオブジェクトを複数持っているstonesをインスタンス変数として定義
+    # self.stone_x = SCREEN_WIDTH // 2
+    # self.stone_y = 0
+    self.stones = []
+    self.is_collision = False
+    pyxel.run(self.update, self.draw)
+
+  def update(self):
+    if pyxel.btnp(pyxel.KEY_ESCAPE):
+      pyxel.quit()
+
+    if pyxel.btn(pyxel.KEY_RIGHT) and self.player_x < SCREEN_WIDTH - 12:
+      self.player_x += 1
+    elif pyxel.btn(pyxel.KEY_LEFT) and self.player_x > -4:
+      self.player_x -= 1
+
+石を追加(instance変数stonesリストにstoneオブジェクト追加)
+self.stonesにStoneオブジェクトを追加(1秒に1つずつ追加)
+pyxel.frame_count　← 経過フレーム数を自動格納した変数、ゲームを始めてからどのくらいフレーム更新されたか
+この値を30で割った余りが0なら1秒ずつstonesにstone objectを追加する
+pyxel.rndi(最小値,最大値)
+    if pyxel.frame_count % STONE_INTERVAL == 0:
+      self.stones.append(Stone(pyxel.rndi(0, SCREEN_WIDTH - 8), 0))
+
+stonesに入っている石を全て動かす処理
+forでstone objectのupdateメソッドを呼び出す
+copyメソッドでstonesをコピーしたオブジェクトを指定
+    for stone in self.stones.copy():
+      stone.update()
 衝突
-if (self.player_x <= self.stone_x <= self.player_x + 8 and self.player_y <= self.stone_y <= self.player_y + 8):
-  self.is_collision = True
+      if (self.player_x <= stone.x <= self.player_x + 8 and self.player_y <= stone.y <= self.player_y + 8):
+        self.is_collision = True
 
-if self.is_collision:
-  pyxel.text(SCREEN_WIDTH // 2 - 20, SCREEN_HEIGHT // 2, "Game Over", pyxel.COLOR_YELLOW)
+画面外に出た石を削除
+      if stone.y >= SCREEN_HEIGHT:
+        self.stones.remove(stone)
+
+一つの石を動かしていた処理を削除
+      # if self.stone_y < SCREEN_HEIGHT:
+      #   self.stone_y += 1
+
+def draw(self):
+    pyxel.cls(pyxel.COLOR_DARK_BLUE)
+    for stone in self.stones:
+      stone.draw()
+石の表示削除
+    # pyxel.blt(self.stone_x,self.stone_y,0,8,0,8,8, pyxel.COLOR_BLACK)
+    pyxel.blt(self.player_x, self.player_y, 0,16,0,16,16, pyxel.COLOR_BLACK)
 ```
+
+
 
 
 
