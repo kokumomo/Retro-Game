@@ -7,23 +7,17 @@ class App:
   def __init__(self):
     pyxel.init(SCREEN_WIDTH,SCREEN_HEIGHT,title='サプーゲーム')
     pyxel.mouse(True)
-    self.number = 0
+    pyxel.load("my_resource.pyxres")
     pyxel.run(self.update, self.draw)
 
   def update(self):
     if pyxel.btnp(pyxel.KEY_ESCAPE):
       pyxel.quit()
 
-    if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
-      if 20 <= pyxel.mouse_x <= 40 and 50 <= pyxel.mouse_y <= 70:
-        self.number -= 1
-      elif 100 <= pyxel.mouse_x <= 120 and 50 <= pyxel.mouse_y <= 70:
-        self.number += 1
-
   def draw(self):
     pyxel.cls(pyxel.COLOR_DARK_BLUE)
-    pyxel.text(SCREEN_WIDTH // 2 -10, SCREEN_HEIGHT // 2, f"{self.number}",pyxel.COLOR_YELLOW)
-    pyxel.text(30,60,"-",pyxel.COLOR_WHITE)
-    pyxel.text(110,60,"+",pyxel.COLOR_WHITE)
+    pyxel.blt(SCREEN_WIDTH // 2,0,0,8,0,8,8, pyxel.COLOR_BLACK)
+    pyxel.blt(SCREEN_WIDTH // 2, SCREEN_HEIGHT * 4 // 5, 0,16,0,16,16, pyxel.COLOR_BLACK)
+    
 
 App()
