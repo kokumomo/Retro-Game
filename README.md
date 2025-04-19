@@ -1,23 +1,24 @@
-## 複数の石を落とす
+## 画面を切り替える
 Stoneクラスから作られたオブジェクトを落ちてくる一つ一つの石として扱う
 
-<img src="screenshot-2025-04-17-142329.png" width=400, height=250>
+<img src="" width=400, height=250>
 
 ```python
-SCREEN_WIDTH = 160
 SCREEN_HEIGHT = 120
 STONE_INTERVAL = 30
+GAME_OVER_DISPLAY_TIME = 60
+START_SCENE = "start"
+PLAY_SCENE = "play"
 
-石の座標を表すx,yインスタンス変数
 class Stone:
   def __init__(self, x, y):
     self.x = x
     self.y = y
-石の移動
+
   def update(self):
     if self.y < SCREEN_HEIGHT:
       self.y += 1
-石の表示 
+    
   def draw(self):
     pyxel.blt(self.x,self.y,0,8,0,8,8, pyxel.COLOR_BLACK)
 
@@ -26,58 +27,87 @@ class App:
     pyxel.init(SCREEN_WIDTH,SCREEN_HEIGHT,title='サプーゲーム')
     pyxel.mouse(True)
     pyxel.load("my_resource.pyxres")
-    self.player_x = SCREEN_WIDTH // 2
-    self.player_y = SCREEN_HEIGHT * 4 // 5
 
-Stoneクラスに持たせた石のx座標とy座標削除
-stoneオブジェクトを複数持っているstonesをインスタンス変数として定義
-    # self.stone_x = SCREEN_WIDTH // 2
-    # self.stone_y = 0
-    self.stones = []
-    self.is_collision = False
+表示させるのはスタートかプレイ画面かの情報を持つcurrent_sceneインスタンス変数
+    self.current_scene = START_SCENE
     pyxel.run(self.update, self.draw)
 
-  def update(self):
-    if pyxel.btnp(pyxel.KEY_ESCAPE):
-      pyxel.quit()
+初期化する処理を作成、移動
+  def reset_play_scene(self):
+    self.player_x = SCREEN_WIDTH // 2
+    self.player_y = SCREEN_HEIGHT * 4 // 5
+    self.stones = []
+    self.is_collision = False
+    self.game_over_display_timer = GAME_OVER_DISPLAY_TIME
+
+スタート画面のフレーム更新時の処理を書くメソッド作成
+画面がクリックされたらプレイ画面に切り替わる
+  def update_start_scene(self):
+    if pyxel.btnp(pyxel.MOUSE_BUTTON_LEFT):
+      self.reset_play_scene()
+      self.current_scene = PLAY_SCENE
+
+プレイ画面用フレームの更新処理を書くメソッドを作ってプレイ画面独自の処理を移動
+is_collisionの値からゲームオーバーか判断
+ゲームオーバーなら、タイマーの時間を減らして0ならスタート画面へ
+  def update_play_scene(self):
+    if self.is_collision:
+      if self.game_over_display_timer > 0:
+        self.game_over_display_timer -= 1
+      else:
+        self.current_scene = START_SCENE
+      return
 
     if pyxel.btn(pyxel.KEY_RIGHT) and self.player_x < SCREEN_WIDTH - 12:
       self.player_x += 1
     elif pyxel.btn(pyxel.KEY_LEFT) and self.player_x > -4:
       self.player_x -= 1
 
-石を追加(instance変数stonesリストにstoneオブジェクト追加)
-self.stonesにStoneオブジェクトを追加(1秒に1つずつ追加)
-pyxel.frame_count　← 経過フレーム数を自動格納した変数、ゲームを始めてからどのくらいフレーム更新されたか
-この値を30で割った余りが0なら1秒ずつstonesにstone objectを追加する
-pyxel.rndi(最小値,最大値)
     if pyxel.frame_count % STONE_INTERVAL == 0:
       self.stones.append(Stone(pyxel.rndi(0, SCREEN_WIDTH - 8), 0))
 
-stonesに入っている石を全て動かす処理
-forでstone objectのupdateメソッドを呼び出す
-copyメソッドでstonesをコピーしたオブジェクトを指定
     for stone in self.stones.copy():
       stone.update()
-衝突
+
       if (self.player_x <= stone.x <= self.player_x + 8 and self.player_y <= stone.y <= self.player_y + 8):
         self.is_collision = True
 
-画面外に出た石を削除
       if stone.y >= SCREEN_HEIGHT:
         self.stones.remove(stone)
 
-一つの石を動かしていた処理を削除
-      # if self.stone_y < SCREEN_HEIGHT:
-      #   self.stone_y += 1
+  def update(self):
+    if pyxel.btnp(pyxel.KEY_ESCAPE):
+      pyxel.quit()
 
-def draw(self):
+    if self.current_scene == START_SCENE:
+      self.update_start_scene()
+    elif self.current_scene == PLAY_SCENE:
+      self.update_play_scene()
+
+スタート画面の描画処理
+表示させる位置を左上にしたいのでx座標は画面幅の10分の1,y座標は画面の高さの10分の1
+  def draw_start_scene(self):
+    pyxel.blt(0,0,0,32,0,160,120)
+    pyxel.text(SCREEN_WIDTH // 10, SCREEN_HEIGHT // 10, "click to Start", pyxel.COLOR_PINK)
+
+プレイ画面の描画処理を行うためのメソッドを作成してプレイ画面独自の描画処理移動
+  def draw_play_scene(self):
     pyxel.cls(pyxel.COLOR_DARK_BLUE)
     for stone in self.stones:
       stone.draw()
-石の表示削除
-    # pyxel.blt(self.stone_x,self.stone_y,0,8,0,8,8, pyxel.COLOR_BLACK)
     pyxel.blt(self.player_x, self.player_y, 0,16,0,16,16, pyxel.COLOR_BLACK)
+
+    if self.is_collision:
+      pyxel.text(SCREEN_WIDTH // 2 - 20, SCREEN_HEIGHT // 2, "Game Over", pyxel.COLOR_YELLOW)
+
+  def draw(self):
+    if self.current_scene == START_SCENE:
+      self.draw_start_scene()
+    elif self.current_scene == PLAY_SCENE:
+      self.draw_play_scene()
+    
+
+App()
 ```
 
 
