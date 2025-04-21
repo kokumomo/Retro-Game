@@ -25,6 +25,7 @@ class App:
     pyxel.mouse(True)
     pyxel.load("my_resource.pyxres")
     self.jp_font = pyxel.Font("umplus_j10r.bdf")
+    pyxel.playm(0, loop=True)
     self.current_scene = START_SCENE
     pyxel.run(self.update, self.draw)
 
